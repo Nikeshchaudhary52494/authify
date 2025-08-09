@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nikeshchaudhary.authify.io.ProfileRequest;
 import com.nikeshchaudhary.authify.io.ProfileResponse;
+import com.nikeshchaudhary.authify.service.EmailService;
 import com.nikeshchaudhary.authify.service.ProfileService;
 
 import jakarta.validation.Valid;
@@ -19,12 +20,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProfileController {
     private final ProfileService profileService;
+    private final EmailService emailService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ProfileResponse register(@Valid @RequestBody ProfileRequest profileRequest) {
-        return profileService.createProfile(profileRequest);
-        // TODO: send welcome email
+        ProfileResponse response = profileService.createProfile(profileRequest);
+        emailService.sendWelcomeEmail(response.getName(), response.getEmail());
+        return response;
     }
 
     @GetMapping("/profile")
