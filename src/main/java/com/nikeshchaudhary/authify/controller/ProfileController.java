@@ -11,6 +11,7 @@ import com.nikeshchaudhary.authify.io.ProfileRequest;
 import com.nikeshchaudhary.authify.io.ProfileResponse;
 import com.nikeshchaudhary.authify.service.ProfileService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -21,7 +22,7 @@ public class ProfileController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public ProfileResponse register(@RequestBody ProfileRequest profileRequest) {
+    public ProfileResponse register(@Valid @RequestBody ProfileRequest profileRequest) {
         return profileService.createProfile(profileRequest);
         // TODO: send welcome email
     }
