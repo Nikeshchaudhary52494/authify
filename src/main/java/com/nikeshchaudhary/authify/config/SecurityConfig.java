@@ -32,6 +32,7 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JwtRequestFilter jwtRequestFilter;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
@@ -45,6 +46,8 @@ public class SecurityConfig {
                         .authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(customAuthenticationEntryPoint))
                 .build();
     }
 
