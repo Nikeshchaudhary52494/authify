@@ -1,56 +1,57 @@
-# Authify — Spring Boot Authentication Service
+# **Authify — Spring Boot Authentication Service**
 
-Authify is a **Spring Boot** based authentication service that provides secure user registration, login, profile management, and logout functionality.  
+Authify is a **Spring Boot** based authentication service that provides secure user registration, login, profile management, and logout functionality.
 It supports **OTP-based email verification**, **password reset via OTP**, and uses **JWT authentication** with **HTTP-only cookies** for secure session management.
 
 ---
 
-## 🚀 Features
+## 🚀 **Features**
 
-- **User Registration**
+### **User Registration**
 
-  - Register with email and password
-  - OTP sent to email for account verification
-  - DTO-based request validation
+- Register with email and password
+- OTP sent to email for account verification
+- DTO-based request validation
 
-- **User Login**
+### **User Login**
 
-  - Login with verified email and password
-  - JWT token issued and stored in HTTP-only cookie
+- Login with verified email and password
+- JWT token issued and stored in HTTP-only cookie
 
-- **User Profile View**
+### **User Profile View**
 
-  - Retrieve profile information for authenticated user
+- Retrieve profile information for authenticated user
 
-- **User Logout**
+### **User Logout**
 
-  - Clear authentication cookie
+- Clear authentication cookie
 
-- **Account Verification**
+### **Account Verification**
 
-  - OTP sent to registered email
-  - Verify account before login
+- OTP sent to registered email
+- Verify account before login
 
-- **Password Reset**
+### **Password Reset**
 
-  - OTP sent to email for password change
-  - Secure password update after OTP verification
+- OTP sent to email for password change
+- Secure password update after OTP verification
 
-- **Validation with DTO**
+### **Validation with DTO**
 
-  - Request payloads validated with **Spring Validation** (`@Valid`, `@NotNull`, `@Email`, etc.)
+- Request payloads validated with **Spring Validation** (`@Valid`, `@NotNull`, `@Email`, etc.)
 
-- **Centralized Exception Handling**
+### **Centralized Exception Handling**
 
-  - Custom global exception handler using `@RestControllerAdvice`
+- Custom global exception handler using `@RestControllerAdvice`
 
-- **JWT Authentication with Cookies**
-  - Stateless authentication
-  - HTTP-only cookie for JWT token to prevent XSS attacks
+### **JWT Authentication with Cookies**
+
+- Stateless authentication
+- HTTP-only cookie for JWT token to prevent XSS attacks
 
 ---
 
-## 🛠 Tech Stack
+## 🛠 **Tech Stack**
 
 - **Java 21+**
 - **Spring Boot 3.x**
@@ -64,7 +65,9 @@ It supports **OTP-based email verification**, **password reset via OTP**, and us
 
 ---
 
-### 3️⃣ Configure Database and Email
+## ⚙️ **Configuration**
+
+### **3️⃣ Configure Database and Email**
 
 Update `src/main/resources/application.properties`:
 
@@ -83,7 +86,9 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 jwt.secret=your_jwt_secret
 ```
 
-### 4️⃣ Build & Run
+---
+
+## ▶ **Build & Run**
 
 ```bash
 mvnw spring-boot:run
@@ -91,21 +96,23 @@ mvnw spring-boot:run
 
 ---
 
-## 📡 API Endpoints
+## 📡 **API Endpoints**
 
-| Method | Endpoint            | Description                    |
-| ------ | ------------------- | ------------------------------ |
-| POST   | `/register`         | Register a new user            |
-| POST   | `/verify`           | Verify account using OTP       |
-| POST   | `/login`            | Login and get JWT in cookie    |
-| GET    | `/profile`          | Get logged-in user profile     |
-| POST   | `/logout`           | Logout user                    |
-| POST   | `/password/request` | Request OTP for password reset |
-| POST   | `/password/reset`   | Reset password using OTP       |
+| Method | Endpoint            | Description                                                      |
+| ------ | ------------------- | ---------------------------------------------------------------- |
+| POST   | `/register`         | Register a new user and get an initial profile response.         |
+| POST   | `/send-otp`         | Send a verification OTP to the logged-in user's email.           |
+| POST   | `/verify-otp`       | Verify a user's account using the OTP.                           |
+| POST   | `/login`            | Authenticate a user and set a JWT cookie for session management. |
+| GET    | `/is-authenticated` | Check if the current user is authenticated.                      |
+| POST   | `/logout`           | Logout the user by clearing the JWT cookie.                      |
+| POST   | `/password/request` | Request an OTP for a password reset via email.                   |
+| POST   | `/password/reset`   | Reset a user's password using the provided email and OTP.        |
+| GET    | `/profile`          | Get the profile details of the logged-in user.                   |
 
 ---
 
-## 🔐 Security
+## 🔐 **Security**
 
 - All protected endpoints require JWT authentication via **HTTP-only cookie**.
 - OTP verification required before login.
@@ -114,23 +121,25 @@ mvnw spring-boot:run
 
 ---
 
-## 🛡 Exception Handling
+## 🛡 **Exception Handling**
 
 - All exceptions handled centrally with `@RestControllerAdvice`
-- Returns consistent JSON error responses:
+- Returns consistent JSON error responses
 
 ---
 
-## 📧 OTP Flow
+## 📧 **OTP Flow**
 
-1. User registers → OTP sent to email.
-2. User verifies OTP → account activated.
-3. For password reset → OTP sent to email.
-4. OTP verified → password updated.
+1. User registers → OTP sent to email
+2. User verifies OTP → account activated
+3. For password reset → OTP sent to email
+4. OTP verified → password updated
 
 ---
 
-### You can spin up a **MySQL** container with a database named `authify` using this command:
+## 🐳 **Run MySQL with Docker**
+
+Spin up a **MySQL** container with a database named `authify`:
 
 ```bash
 docker run -d \
@@ -143,17 +152,15 @@ docker run -d \
 
 **Details:**
 
-- `-name authify-mysql` → container name
-- `e MYSQL_ROOT_PASSWORD=secretpassword` → root password (change it in production)
-- `e MYSQL_DATABASE=authify` → creates a database named `authify` automatically
-- `p 3306:3306` → exposes MySQL on your host machine’s port `3306`
-- `mysql:8.0` → version of MySQL
+- `--name authify-mysql` → container name
+- `-e MYSQL_ROOT_PASSWORD=secretpassword` → root password (change in production)
+- `-e MYSQL_DATABASE=authify` → creates database `authify` automatically
+- `-p 3306:3306` → exposes MySQL on host port `3306`
+- `mysql:8.0` → MySQL version
 
 ---
 
-### **Connection URL**
-
-Once it’s running, the JDBC/MySQL connection URL would be:
+## 🔗 **Connection URL**
 
 ```
 mysql://root:secretpassword@localhost:3306/authify
