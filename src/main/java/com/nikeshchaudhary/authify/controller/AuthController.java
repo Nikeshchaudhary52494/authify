@@ -1,22 +1,15 @@
 package com.nikeshchaudhary.authify.controller;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.CurrentSecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,8 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.nikeshchaudhary.authify.io.AuthRequest;
 import com.nikeshchaudhary.authify.io.ResetPasswordRequest;
 import com.nikeshchaudhary.authify.io.VerifyOtpRequest;
+import com.nikeshchaudhary.authify.service.AuthService;
 import com.nikeshchaudhary.authify.service.ProfileService;
-import com.nikeshchaudhary.authify.util.JwtUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,30 +29,28 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtUtil;
+    private final AuthService authService;
     private final ProfileService profileService;
 
     // === Authentication Endpoints ===
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
-        try {
-            authenticate(authRequest.getEmail(), authRequest.getPassword());
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody AuthRequest authRequest) {
+        String jwtToken = authService.login(authRequest.getEmail(), authRequest.getPassword());
+        ResponseCookie cookie = buildJwtCookie(jwtToken, Duration.ofHours(1));
 
-            final String jwtToken = jwtUtil.generateToken(authRequest.getEmail());
-            ResponseCookie cookie = buildJwtCookie(jwtToken);
+        Map<String, Object> success = authService.buildSuccessResponse("Login successful");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(success);
+    }
 
-            Map<String, Object> success = buildSuccessResponse("Login successful");
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                    .body(success);
-        } catch (BadCredentialsException ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(buildErrorResponse("Incorrect email or password"));
-        } catch (DisabledException ex) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(buildErrorResponse("Account is disabled"));
-        }
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout() {
+        ResponseCookie cookie = buildJwtCookie(null, Duration.ZERO);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(authService.buildSuccessResponse("Logout successful"));
     }
 
     @GetMapping("/is-authenticated")
@@ -75,85 +66,47 @@ public class AuthController {
 
     // === Password Reset Endpoints ===
 
-    @PostMapping("/send-reset-otp")
-    public ResponseEntity<?> sendResetOtp(@RequestParam String email) {
-        try {
-            profileService.sendResetOtp(email);
-            return ResponseEntity.ok(buildSuccessResponse("Reset OTP sent to your email."));
-        } catch (UsernameNotFoundException ex) {
-            return ResponseEntity.badRequest().body(buildErrorResponse("User with this email not found."));
-        }
+    @PostMapping("/password/request")
+    public ResponseEntity<Map<String, Object>> sendResetOtp(@RequestParam String email) {
+        profileService.sendResetOtp(email);
+        return ResponseEntity.ok(authService.buildSuccessResponse("Reset OTP sent to your email."));
     }
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
-        try {
-            profileService.resetPassword(
-                    resetPasswordRequest.getEmail(),
-                    resetPasswordRequest.getOtp(),
-                    resetPasswordRequest.getNewPassword());
+    @PostMapping("/password/reset")
+    public ResponseEntity<Map<String, Object>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+        profileService.resetPassword(
+                resetPasswordRequest.getEmail(),
+                resetPasswordRequest.getOtp(),
+                resetPasswordRequest.getNewPassword());
 
-            return ResponseEntity.ok(buildSuccessResponse("Password has been successfully reset."));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(buildErrorResponse(ex.getMessage()));
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(buildErrorResponse("An unexpected error occurred."));
-        }
+        return ResponseEntity.ok(authService.buildSuccessResponse("Password has been successfully reset."));
     }
 
     // === Account Verification Endpoints ===
 
     @PostMapping("/send-otp")
-    public ResponseEntity<?> sendVerificationOtp(
+    public ResponseEntity<Map<String, Object>> sendVerificationOtp(
             @CurrentSecurityContext(expression = "authentication?.name") String email) {
-        try {
-            profileService.sendOtp(email);
-            return ResponseEntity.ok(buildSuccessResponse("Verification OTP sent to your email."));
-        } catch (UsernameNotFoundException ex) {
-            return ResponseEntity.badRequest().body(buildErrorResponse("User with this email not found."));
-        }
+        profileService.sendOtp(email);
+        return ResponseEntity.ok(authService.buildSuccessResponse("Verification OTP sent to your email."));
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest) {
-        try {
-            profileService.verifyOtp(verifyOtpRequest.getEmail(), verifyOtpRequest.getOtp());
-            return ResponseEntity.ok(buildSuccessResponse("Account verified successfully."));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(buildErrorResponse(ex.getMessage()));
-        } catch (UsernameNotFoundException ex) {
-            return ResponseEntity.badRequest().body(buildErrorResponse("User with this email not found."));
-        }
+    public ResponseEntity<Map<String, Object>> verifyOtp(@Valid @RequestBody VerifyOtpRequest verifyOtpRequest) {
+        profileService.verifyOtp(verifyOtpRequest.getEmail(), verifyOtpRequest.getOtp());
+        return ResponseEntity.ok(authService.buildSuccessResponse("Account verified successfully."));
     }
 
     // === Helper Methods ===
 
-    private void authenticate(String email, String password) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-    }
-
-    private ResponseCookie buildJwtCookie(String jwtToken) {
+    private ResponseCookie buildJwtCookie(String jwtToken, Duration maxAge) {
         return ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
                 .path("/")
-                .maxAge(Duration.ofHours(1))
+                .maxAge(maxAge)
                 .sameSite("Strict")
                 .secure(true)
                 .build();
-    }
-
-    private Map<String, Object> buildSuccessResponse(String message) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("error", false);
-        response.put("message", message);
-        return response;
-    }
-
-    private Map<String, Object> buildErrorResponse(String message) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("error", true);
-        response.put("message", message);
-        return response;
     }
 }

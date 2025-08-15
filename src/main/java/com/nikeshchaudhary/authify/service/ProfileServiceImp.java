@@ -34,7 +34,7 @@ public class ProfileServiceImp implements ProfileService {
 
         UserEntity newProfile = convertToUserEntity(profileRequest);
         newProfile = profileRepository.save(newProfile);
-        // emailService.sendWelcomeEmail(newProfile.getName(), newProfile.getEmail());
+        emailService.sendWelcomeEmail(newProfile.getName(), newProfile.getEmail());
         return convertToProFileResponse(newProfile);
     }
 

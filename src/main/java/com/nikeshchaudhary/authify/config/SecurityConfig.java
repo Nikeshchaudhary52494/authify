@@ -1,5 +1,7 @@
 package com.nikeshchaudhary.authify.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,8 +24,6 @@ import org.springframework.web.filter.CorsFilter;
 import com.nikeshchaudhary.authify.filter.JwtRequestFilter;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -48,6 +48,7 @@ public class SecurityConfig {
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint))
+                .logout(logout -> logout.disable())
                 .build();
     }
 
