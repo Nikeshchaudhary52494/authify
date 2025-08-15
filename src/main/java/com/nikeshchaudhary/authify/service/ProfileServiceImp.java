@@ -4,13 +4,12 @@ import java.time.Instant;
 import java.util.Random;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.nikeshchaudhary.authify.entity.UserEntity;
+import com.nikeshchaudhary.authify.exception.UserAlreadyExistsException;
 import com.nikeshchaudhary.authify.io.ProfileRequest;
 import com.nikeshchaudhary.authify.io.ProfileResponse;
 import com.nikeshchaudhary.authify.repository.ProfileRepository;
@@ -30,11 +29,12 @@ public class ProfileServiceImp implements ProfileService {
     @Override
     public ProfileResponse createProfile(ProfileRequest profileRequest) {
         if (profileRepository.existsByEmail(profileRequest.getEmail())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
+            throw new UserAlreadyExistsException("Email already exists");
         }
 
         UserEntity newProfile = convertToUserEntity(profileRequest);
         newProfile = profileRepository.save(newProfile);
+        // emailService.sendWelcomeEmail(newProfile.getName(), newProfile.getEmail());
         return convertToProFileResponse(newProfile);
     }
 

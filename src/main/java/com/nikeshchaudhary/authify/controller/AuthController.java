@@ -4,8 +4,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import jakarta.validation.Valid;
-
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -31,6 +29,7 @@ import com.nikeshchaudhary.authify.io.VerifyOtpRequest;
 import com.nikeshchaudhary.authify.service.ProfileService;
 import com.nikeshchaudhary.authify.util.JwtUtil;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
